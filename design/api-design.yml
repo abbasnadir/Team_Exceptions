@@ -142,6 +142,39 @@ components:
         entities:
           type: object
           additionalProperties: true
+    VoiceDecision:
+      type: object
+      required:
+        - intent
+        - sentiment_score
+        - urgency_score
+        - language
+        - requires_human
+        - confidence
+      properties:
+        intent:
+          type: string
+          enum: [complaint, reservation, inquiry, payment, support, other]
+        sentiment_score:
+          type: number
+          format: float
+          minimum: -1
+          maximum: 1
+        urgency_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        language:
+          type: string
+          example: en
+        requires_human:
+          type: boolean
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
     FlowNode:
       type: object
       required:
@@ -662,6 +695,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SignalExtraction"
+  /ai/voice-decision:
+    post:
+      tags: [AI Signals]
+      summary: Voice input -> Sarvam STT/translation -> Gemini decision JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [audio_base64]
+              properties:
+                audio_base64:
+                  type: string
+                  description: Base64 audio bytes. Data URI format is also accepted.
+                mime_type:
+                  type: string
+                  example: audio/wav
+                file_name:
+                  type: string
+                  example: input.wav
+      responses:
+        "200":
+          description: Voice was processed and classified.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  input:
+                    type: object
+                    properties:
+                      source_text:
+                        type: string
+                      translated_text:
+                        type: string
+                      source_language:
+                        type: string
+                        nullable: true
+                      target_language:
+                        type: string
+                        example: en
+                  decision:
+                    $ref: "#/components/schemas/VoiceDecision"
   /flow-engine/evaluate:
     post:
       tags: [Flow Engine]

@@ -18,4 +18,14 @@ export const ENV = {
   SUPABASE_URL: requireEnv("SUPABASE_URL"),
 
   SUPABASE_SERVICE_KEY: requireEnv("SUPABASE_SERVICE_KEY"),
+
+  SARVAM_API_KEY: requireEnv("SARVAM_API_KEY"),
+
+  GEMINI_API_KEY: requireEnv("GEMINI_API_KEY"),
+
+  SARVAM_STT_URL:
+    process.env.SARVAM_STT_URL ??
+    "https://api.sarvam.ai/speech-to-text-translate",
+
+  GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
 };
