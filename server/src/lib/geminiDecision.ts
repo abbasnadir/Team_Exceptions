@@ -10,14 +10,16 @@ const ALLOWED_INTENTS = new Set([
   "other",
 ]);
 
-interface DecisionOutput {
-  intent:
-    | "complaint"
-    | "reservation"
-    | "inquiry"
-    | "payment"
-    | "support"
-    | "other";
+export type IntentType =
+  | "complaint"
+  | "reservation"
+  | "inquiry"
+  | "payment"
+  | "support"
+  | "other";
+
+export interface DecisionOutput {
+  intent: IntentType;
   sentiment_score: number;
   urgency_score: number;
   language: string;

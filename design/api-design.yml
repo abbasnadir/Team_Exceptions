@@ -175,6 +175,25 @@ components:
           format: float
           minimum: 0
           maximum: 1
+    MicroserviceInvocation:
+      type: object
+      required: [service, mode, status, action, payload]
+      properties:
+        service:
+          type: string
+          example: ticketing-service
+        mode:
+          type: string
+          enum: [local, remote]
+        status:
+          type: string
+          enum: [success, failed]
+        action:
+          type: string
+          example: create_ticket
+        payload:
+          type: object
+          additionalProperties: true
     FlowNode:
       type: object
       required:
@@ -716,6 +735,12 @@ paths:
                 file_name:
                   type: string
                   example: input.wav
+                session_id:
+                  type: string
+                  format: uuid
+                metadata:
+                  type: object
+                  additionalProperties: true
       responses:
         "200":
           description: Voice was processed and classified.
@@ -739,6 +764,8 @@ paths:
                         example: en
                   decision:
                     $ref: "#/components/schemas/VoiceDecision"
+                  microservice:
+                    $ref: "#/components/schemas/MicroserviceInvocation"
   /flow-engine/evaluate:
     post:
       tags: [Flow Engine]

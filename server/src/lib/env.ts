@@ -28,4 +28,14 @@ export const ENV = {
     "https://api.sarvam.ai/speech-to-text-translate",
 
   GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
+
+  TICKETING_SERVICE_URL: process.env.TICKETING_SERVICE_URL,
+
+  RESERVATION_SERVICE_URL: process.env.RESERVATION_SERVICE_URL,
+
+  KNOWLEDGE_SERVICE_URL: process.env.KNOWLEDGE_SERVICE_URL,
+
+  PAYMENT_SERVICE_URL: process.env.PAYMENT_SERVICE_URL,
+
+  SUPPORT_SERVICE_URL: process.env.SUPPORT_SERVICE_URL,
 };
