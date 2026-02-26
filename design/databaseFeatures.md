@@ -232,6 +232,29 @@ erDiagram
         TIMESTAMP created_at
     }
 
+    query_analytics {
+        UUID id PK
+        UUID session_id FK
+        VARCHAR channel
+        TEXT query_text_raw
+        TEXT query_text_normalized
+        VARCHAR source_language
+        VARCHAR translated_to
+        VARCHAR intent
+        FLOAT sentiment_score
+        FLOAT urgency_score
+        BOOLEAN requires_human
+        FLOAT confidence
+        VARCHAR detected_language
+        VARCHAR routed_service
+        VARCHAR routed_action
+        VARCHAR service_mode
+        VARCHAR service_status
+        INT processing_latency_ms
+        JSONB metadata
+        TIMESTAMPTZ created_at
+    }
+
     contacts ||--o{ sessions : "has"
     contacts ||--o{ tickets : "raises"
     contacts ||--o{ reservations : "makes"
@@ -248,6 +271,7 @@ erDiagram
     sessions ||--o{ channel_events : "associated_with"
     sessions ||--o{ tickets : "generates"
     sessions ||--o{ reservations : "books"
+    sessions ||--o{ query_analytics : "logs_queries"
 
     messages ||--o{ tone_training_log : "feeds"
 
@@ -256,4 +280,36 @@ erDiagram
     documents ||--o{ document_chunks : "split_into"
 
     escalations ||--o| tickets : "creates"
-    ```
+```
+
+### SQL migration for query analytics
+
+```sql
+create table if not exists public.query_analytics (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid null references public.sessions(id) on delete set null,
+  channel varchar(32) not null,
+  query_text_raw text not null,
+  query_text_normalized text not null,
+  source_language varchar(16) null,
+  translated_to varchar(16) not null default 'en',
+  intent varchar(32) not null,
+  sentiment_score double precision not null check (sentiment_score >= -1 and sentiment_score <= 1),
+  urgency_score double precision not null check (urgency_score >= 0 and urgency_score <= 1),
+  requires_human boolean not null default false,
+  confidence double precision not null check (confidence >= 0 and confidence <= 1),
+  detected_language varchar(16) not null,
+  routed_service varchar(64) not null,
+  routed_action varchar(64) not null,
+  service_mode varchar(16) not null,
+  service_status varchar(16) not null,
+  processing_latency_ms integer not null check (processing_latency_ms >= 0),
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_query_analytics_created_at on public.query_analytics(created_at desc);
+create index if not exists idx_query_analytics_intent on public.query_analytics(intent);
+create index if not exists idx_query_analytics_session_id on public.query_analytics(session_id);
+create index if not exists idx_query_analytics_channel on public.query_analytics(channel);
+```

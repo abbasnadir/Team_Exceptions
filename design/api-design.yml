@@ -194,6 +194,19 @@ components:
         payload:
           type: object
           additionalProperties: true
+    QueryAnalyticsWriteResult:
+      type: object
+      required: [logged]
+      properties:
+        logged:
+          type: boolean
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        error:
+          type: string
+          nullable: true
     FlowNode:
       type: object
       required:
@@ -766,6 +779,8 @@ paths:
                     $ref: "#/components/schemas/VoiceDecision"
                   microservice:
                     $ref: "#/components/schemas/MicroserviceInvocation"
+                  analytics:
+                    $ref: "#/components/schemas/QueryAnalyticsWriteResult"
   /flow-engine/evaluate:
     post:
       tags: [Flow Engine]
