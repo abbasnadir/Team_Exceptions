@@ -120,3 +120,6 @@ Example Flow Structure:
     }
   ]
 }
+```
+
+${{\color{Goldenrod}\Huge{\textsf{  Refer to `./design` folder to learn more about the app and specifications. \}}}}\$
