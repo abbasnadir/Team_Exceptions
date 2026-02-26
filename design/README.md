@@ -4,3 +4,4 @@ Some of the files use [mermaid](https://mermaid.js.org) extension to render prev
 ```
 pnpm install mermaid --save-dev
 ```
+User flow is in `userflow.md`
