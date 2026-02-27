@@ -15,9 +15,17 @@ export const ENV = {
   PROD_URL:
     process.env.NODE_ENV === "production" ? requireEnv("PROD_URL") : undefined,
 
-  SUPABASE_URL: requireEnv("SUPABASE_URL"),
+  MONGODB_URI: process.env.MONGODB_URI ?? "",
 
-  SUPABASE_SERVICE_KEY: requireEnv("SUPABASE_SERVICE_KEY"),
+  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME ?? "vaniflow",
+
+  MONGODB_DATA_API_URL: process.env.MONGODB_DATA_API_URL,
+
+  MONGODB_DATA_API_KEY: process.env.MONGODB_DATA_API_KEY,
+
+  MONGODB_DATA_SOURCE: process.env.MONGODB_DATA_SOURCE,
+
+  JWT_SECRET: requireEnv("JWT_SECRET"),
 
   SARVAM_API_KEY: requireEnv("SARVAM_API_KEY"),
 

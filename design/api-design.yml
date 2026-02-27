@@ -11,6 +11,8 @@ servers:
 tags:
   - name: System
   - name: Auth
+  - name: Accounts
+  - name: Organizations
   - name: Flows
   - name: Conversations
   - name: AI Signals
@@ -29,6 +31,13 @@ components:
   parameters:
     flowId:
       name: flowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    chatbotId:
+      name: chatbotId
       in: path
       required: true
       schema:
@@ -207,6 +216,156 @@ components:
         error:
           type: string
           nullable: true
+    FlowActionLogWriteResult:
+      type: object
+      required: [logged]
+      properties:
+        logged:
+          type: boolean
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        error:
+          type: string
+          nullable: true
+    UserAccount:
+      type: object
+      required: [user_id, account_type]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        account_type:
+          type: string
+          enum: [organization, user]
+        display_name:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        organization_name:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+    AuthUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [organization, user]
+        display_name:
+          type: string
+          nullable: true
+        organization_name:
+          type: string
+          nullable: true
+    Chatbot:
+      type: object
+      required: [id, owner_user_id, name, is_active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OrgFlowDefinition:
+      type: object
+      required: [start_node_id, nodes]
+      properties:
+        start_node_id:
+          type: string
+        nodes:
+          type: array
+          items:
+            type: object
+            required: [id, action, consequences]
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              condition:
+                type: string
+              action:
+                type: object
+                required: [type]
+                properties:
+                  type:
+                    type: string
+                    enum: [reply, create_ticket, escalate_human, call_microservice, end]
+                  microservice:
+                    type: string
+                  payload:
+                    type: object
+                    additionalProperties: true
+              consequences:
+                type: array
+                items:
+                  type: object
+                  required: [condition, next_node_id]
+                  properties:
+                    condition:
+                      type: string
+                    next_node_id:
+                      type: string
+    ChatbotFlow:
+      type: object
+      required: [id, chatbot_id, name, version, is_active, definition]
+      properties:
+        id:
+          type: string
+          format: uuid
+        chatbot_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: integer
+        is_active:
+          type: boolean
+        definition:
+          $ref: "#/components/schemas/OrgFlowDefinition"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     FlowNode:
       type: object
       required:
@@ -489,6 +648,342 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Register a new account and receive access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                display_name:
+                  type: string
+                account_type:
+                  type: string
+                  enum: [organization, user]
+                organization_name:
+                  type: string
+      responses:
+        "201":
+          description: Registration success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/AuthUser"
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Login and receive access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/AuthUser"
+  /account/register:
+    post:
+      tags: [Accounts]
+      summary: Register current authenticated user as organization or ordinary user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_type]
+              properties:
+                account_type:
+                  type: string
+                  enum: [organization, user]
+                display_name:
+                  type: string
+                phone:
+                  type: string
+                organization_name:
+                  type: string
+      responses:
+        "200":
+          description: Account saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    $ref: "#/components/schemas/UserAccount"
+  /account/me:
+    get:
+      tags: [Accounts]
+      summary: Get current account details
+      responses:
+        "200":
+          description: Account details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    $ref: "#/components/schemas/UserAccount"
+    patch:
+      tags: [Accounts]
+      summary: Update current account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                phone:
+                  type: string
+                organization_name:
+                  type: string
+      responses:
+        "200":
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    $ref: "#/components/schemas/UserAccount"
+    delete:
+      tags: [Accounts]
+      summary: Soft delete current account
+      responses:
+        "200":
+          description: Account soft deleted
+  /org/chatbots:
+    post:
+      tags: [Organizations]
+      summary: Create chatbot (organization accounts only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Chatbot created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chatbot:
+                    $ref: "#/components/schemas/Chatbot"
+    get:
+      tags: [Organizations]
+      summary: List chatbots for current organization account
+      responses:
+        "200":
+          description: Chatbot list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Chatbot"
+  /org/chatbots/{chatbotId}:
+    patch:
+      tags: [Organizations]
+      summary: Update chatbot by ID
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                is_active:
+                  type: boolean
+      responses:
+        "200":
+          description: Chatbot updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chatbot:
+                    $ref: "#/components/schemas/Chatbot"
+    delete:
+      tags: [Organizations]
+      summary: Delete chatbot by ID
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+      responses:
+        "200":
+          description: Chatbot deleted
+  /org/chatbots/{chatbotId}/flows:
+    post:
+      tags: [Organizations]
+      summary: Create flowchart version for chatbot
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, definition]
+              properties:
+                name:
+                  type: string
+                is_active:
+                  type: boolean
+                definition:
+                  $ref: "#/components/schemas/OrgFlowDefinition"
+      responses:
+        "201":
+          description: Flow created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flow:
+                    $ref: "#/components/schemas/ChatbotFlow"
+    get:
+      tags: [Organizations]
+      summary: List all flowchart versions for chatbot
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+      responses:
+        "200":
+          description: Flow list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatbotFlow"
+  /org/chatbots/{chatbotId}/flows/{flowId}:
+    patch:
+      tags: [Organizations]
+      summary: Update flowchart by ID
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+        - $ref: "#/components/parameters/flowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                is_active:
+                  type: boolean
+                definition:
+                  $ref: "#/components/schemas/OrgFlowDefinition"
+      responses:
+        "200":
+          description: Flow updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flow:
+                    $ref: "#/components/schemas/ChatbotFlow"
+    delete:
+      tags: [Organizations]
+      summary: Delete flowchart by ID
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+        - $ref: "#/components/parameters/flowId"
+      responses:
+        "200":
+          description: Flow deleted
+  /chat/organizations:
+    get:
+      tags: [Conversations]
+      security: []
+      summary: List active organization chatbots
+      responses:
+        "200":
+          description: Organization chatbot list
+  /chat/organizations/{chatbotId}/message:
+    post:
+      tags: [Conversations]
+      security: []
+      summary: Send text message to organization chatbot and execute flowchart
+      parameters:
+        - $ref: "#/components/parameters/chatbotId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                session_id:
+                  type: string
+      responses:
+        "200":
+          description: Chatbot response with flow execution info
   /flows:
     get:
       tags: [Flows]
@@ -751,6 +1246,12 @@ paths:
                 session_id:
                   type: string
                   format: uuid
+                chatbot_id:
+                  type: string
+                  format: uuid
+                flow_id:
+                  type: string
+                  format: uuid
                 metadata:
                   type: object
                   additionalProperties: true
@@ -781,6 +1282,8 @@ paths:
                     $ref: "#/components/schemas/MicroserviceInvocation"
                   analytics:
                     $ref: "#/components/schemas/QueryAnalyticsWriteResult"
+                  flow_log:
+                    $ref: "#/components/schemas/FlowActionLogWriteResult"
   /flow-engine/evaluate:
     post:
       tags: [Flow Engine]

@@ -6,6 +6,7 @@ import { transcribeVoiceToEnglish } from "../lib/sarvam.js";
 import { classifyDecisionFromText } from "../lib/geminiDecision.js";
 import { invokeIntentMicroservice } from "../lib/intentMicroservice.js";
 import { storeQueryAnalytics } from "../lib/queryAnalytics.js";
+import { storeFlowActionLog } from "../lib/flowActionLog.js";
 
 function parseBase64Audio(audioBase64: string): Buffer {
   const cleaned = audioBase64.replace(/^data:audio\/[a-zA-Z0-9.+-]+;base64,/, "");
@@ -26,12 +27,15 @@ const aiDecisionRouter: RouterObject = {
       keyType: "default",
       handler: async (req: Request, res: Response) => {
         const requestStartedAt = Date.now();
-        const { audio_base64, mime_type, file_name, session_id, metadata } = req.body as {
+        const { audio_base64, mime_type, file_name, session_id, metadata, chatbot_id, flow_id } =
+          req.body as {
           audio_base64?: string;
           mime_type?: string;
           file_name?: string;
           session_id?: string;
           metadata?: Record<string, unknown>;
+          chatbot_id?: string;
+          flow_id?: string;
         };
 
         if (!audio_base64 || typeof audio_base64 !== "string") {
@@ -70,6 +74,18 @@ const aiDecisionRouter: RouterObject = {
           processingLatencyMs: Date.now() - requestStartedAt,
           metadata,
         });
+        const flowLog = await storeFlowActionLog({
+          sessionId: session_id,
+          chatbotId: chatbot_id,
+          flowId: flow_id,
+          fromNodeId:
+            typeof metadata?.from_node_id === "string" ? metadata.from_node_id : undefined,
+          toNodeId: typeof metadata?.to_node_id === "string" ? metadata.to_node_id : undefined,
+          decision,
+          microservice,
+          rawInput: stt.source_text,
+          normalizedInput: stt.translated_text,
+        });
 
         res.status(200).json({
           input: {
@@ -81,6 +97,7 @@ const aiDecisionRouter: RouterObject = {
           decision,
           microservice,
           analytics,
+          flow_log: flowLog,
         });
       },
     },

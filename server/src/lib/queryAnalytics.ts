@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseClient.js";
+import { getDb } from "./mongo.js";
 import type { DecisionOutput } from "./geminiDecision.js";
 import type { MicroserviceResult } from "./intentMicroservice.js";
 
@@ -45,23 +45,22 @@ export async function storeQueryAnalytics(
     metadata: input.metadata ?? {},
   };
 
-  const { data, error } = await supabase
-    .from("query_analytics")
-    .insert(row)
-    .select("id")
-    .single();
-
-  if (error) {
+  try {
+    const db = await getDb();
+    const inserted = await db.collection("query_analytics").insertOne({
+      ...row,
+      created_at: new Date().toISOString(),
+    });
+    return {
+      logged: true,
+      id: inserted.insertedId.toString(),
+      error: null,
+    };
+  } catch (error) {
     return {
       logged: false,
       id: null,
-      error: error.message,
+      error: error instanceof Error ? error.message : "Failed to write analytics.",
     };
   }
-
-  return {
-    logged: true,
-    id: (data as { id: string } | null)?.id ?? null,
-    error: null,
-  };
 }
