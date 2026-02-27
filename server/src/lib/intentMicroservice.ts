@@ -2,7 +2,7 @@ import { AppError } from "../errors/AppError.js";
 import { ENV } from "./env.js";
 import type { DecisionOutput, IntentType } from "./geminiDecision.js";
 
-type ServiceName =
+export type ServiceName =
   | "ticketing-service"
   | "reservation-service"
   | "knowledge-service"
@@ -17,7 +17,7 @@ interface InvocationInput {
   metadata: Record<string, unknown> | undefined;
 }
 
-interface MicroserviceResult {
+export interface MicroserviceResult {
   service: ServiceName;
   mode: "local" | "remote";
   status: "success" | "failed";

@@ -7,7 +7,6 @@ function requireEnv(name: string): string {
 }
 
 export const ENV = {
-  NEXT_PUBLIC_SUPABASE_URL: requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-
-  NEXT_PUBLIC_SUPABASE_ANONKEY: requireEnv("NEXT_PUBLIC_SUPABASE_ANONKEY"),
+  NEXT_PUBLIC_API_BASE_URL:
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000",
 };

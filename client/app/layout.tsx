@@ -16,9 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hangman v2",
-  description:
-    "A robust multiplayer hangman game with authentication and leaderboards",
+  title: "VaniFlow Client",
+  description: "Flow-driven AI voice and chat automation frontend",
 };
 
 export default function RootLayout({
